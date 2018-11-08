@@ -27,11 +27,10 @@ public:
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-    dsp::FFT forward_fft;
-    dsp::FFT inverse_fft;
     float freq;
     void dsp_process(dsp::ProcessContextReplacing<float>);
     void update_parameters();
+    PhaseVocoder * phase_vocoder;
     dsp::ProcessorDuplicator<dsp::IIR::Filter<float>, dsp::IIR::Coefficients<float>> lowpass;
     void update_filter();
    #ifndef JucePlugin_PreferredChannelConfigurations

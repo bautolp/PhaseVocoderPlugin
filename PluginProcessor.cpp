@@ -21,13 +21,20 @@ PhaseVocoderPluginAudioProcessor::PhaseVocoderPluginAudioProcessor()
 #endif
         .withOutput("Output", AudioChannelSet::stereo(), true)
 #endif
-    ), forward_fft(13), inverse_fft(13), lowpass(dsp::IIR::Coefficients<float>::makeLowPass(44100, 800.0f, 0.1f))
+    ), lowpass(dsp::IIR::Coefficients<float>::makeLowPass(44100, 800.0f, 0.1f)), phase_vocoder(NULL)
 #endif
 {
+    uint32_t window_size = 128;
+    uint32_t hop_size = 8;
+    WindowFunctionType window_type = WindowFunctionType::Flat;
+
+    phase_vocoder = new PhaseVocoder(window_size, hop_size, window_type);
 }
 
 PhaseVocoderPluginAudioProcessor::~PhaseVocoderPluginAudioProcessor()
 {
+    if (phase_vocoder)
+        delete phase_vocoder;
 }
 
 //==============================================================================
@@ -97,12 +104,12 @@ void PhaseVocoderPluginAudioProcessor::prepareToPlay (double sampleRate, int sam
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-    /*dsp::ProcessSpec spec;
+    dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = samplesPerBlock;
     spec.numChannels = getTotalNumOutputChannels();
     lowpass.prepare(spec);
-    lowpass.reset();*/
+    lowpass.reset();
 
 }
 
@@ -157,28 +164,39 @@ void PhaseVocoderPluginAudioProcessor::update_filter()
 void PhaseVocoderPluginAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
+    //buffer.applyGain(0.1);
 
-    const int totalNumInputChannels = getTotalNumInputChannels();
-    const int totalNumOutputChannels = getTotalNumOutputChannels();
-
-    for (int channel = totalNumInputChannels; channel < totalNumOutputChannels; ++channel)
-        buffer.clear(channel, 0, buffer.getNumSamples());
-
-    dsp::AudioBlock<float> block(buffer);
-    //dsp_process(dsp::ProcessContextReplacing<float>(block));
+    /*dsp::AudioBlock<float> block(buffer);
     update_filter();
     lowpass.process(dsp::ProcessContextReplacing<float>(block));
-    /*
+    return;
+
+
+    static uint32_t window_size = 0;
+    static uint32_t hop_size = 0;
+    if (window_size != (buffer.getNumSamples() / 8))
+    {
+        window_size = buffer.getNumSamples() / 8;
+        hop_size = 1;
+        phase_vocoder->Setup(window_size, hop_size, WindowFunctionType::Flat);
+    }
+
+    for (int channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
+        buffer.clear(channel, 0, buffer.getNumSamples());
+
     for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
     {
-        float* OutputData = buffer.getWritePointer(channel);
-        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
-        {
-            OutputData[sample] = buffer.getSample(channel, sample) * 0.25;
-        }
+        float * output = buffer.getWritePointer(channel);
+
+        // Clear output buffer because we are not setting, just adding to current val
+        phase_vocoder->DSPProcessing(output, output, buffer.getNumSamples());
+    }*/
+
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    {
+        float * output = buffer.getWritePointer(channel);
+        phase_vocoder->DSPProcessing(output, output, buffer.getNumSamples(), channel);
     }
-    */
-    
 }
 
 //==============================================================================
