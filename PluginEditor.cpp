@@ -18,19 +18,6 @@ PhaseVocoderPluginAudioProcessorEditor::PhaseVocoderPluginAudioProcessorEditor (
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (400, 300);
-
-    addAndMakeVisible(frequencySlider);
-    frequencySlider.setRange(50, 5000.0);          // [1]
-    frequencySlider.setTextValueSuffix(" Hz");     // [2]
-    frequencySlider.addListener(this);
-    addAndMakeVisible(frequencyLabel);
-    frequencyLabel.setText("Frequency", dontSendNotification);
-    frequencyLabel.attachToComponent(&frequencySlider, true); // [4]
-}
-
-void PhaseVocoderPluginAudioProcessorEditor::sliderValueChanged(Slider* slider)
-{
-    processor.freq = frequencySlider.getValue();
 }
 
 PhaseVocoderPluginAudioProcessorEditor::~PhaseVocoderPluginAudioProcessorEditor()
@@ -61,6 +48,4 @@ void PhaseVocoderPluginAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
-    auto sliderLeft = 120;
-    frequencySlider.setBounds(sliderLeft, 20, getWidth() - sliderLeft - 10, 20);
 }

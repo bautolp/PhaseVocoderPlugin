@@ -16,7 +16,7 @@
 //==============================================================================
 /**
 */
-class PhaseVocoderPluginAudioProcessorEditor  : public AudioProcessorEditor, private Slider::Listener
+class PhaseVocoderPluginAudioProcessorEditor  : public AudioProcessorEditor
 {
 public:
     PhaseVocoderPluginAudioProcessorEditor (PhaseVocoderPluginAudioProcessor&);
@@ -26,12 +26,8 @@ public:
     void paint (Graphics&) override;
     void resized() override;
     void log(Graphics&, std::string);
-
-    Slider frequencySlider;
-    Label frequencyLabel;
 private:
 
-    void sliderValueChanged(Slider* slider) override; // [3]
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     PhaseVocoderPluginAudioProcessor& processor;
