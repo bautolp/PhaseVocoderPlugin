@@ -26,7 +26,7 @@ PhaseVocoderPluginAudioProcessor::PhaseVocoderPluginAudioProcessor()
 {
     uint32_t window_size = 128;
     uint32_t hop_size = 8;
-    WindowFunctionType window_type = WindowFunctionType::Flat;
+    WindowFunctionType window_type = WindowFunctionType::Hanning;
 
     phase_vocoder = new PhaseVocoder(window_size, hop_size, window_type);
 }
@@ -34,7 +34,10 @@ PhaseVocoderPluginAudioProcessor::PhaseVocoderPluginAudioProcessor()
 PhaseVocoderPluginAudioProcessor::~PhaseVocoderPluginAudioProcessor()
 {
     if (phase_vocoder)
+    {
         delete phase_vocoder;
+        phase_vocoder = NULL;
+    }
 }
 
 //==============================================================================
@@ -117,6 +120,7 @@ void PhaseVocoderPluginAudioProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
+    phase_vocoder->Finish();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
