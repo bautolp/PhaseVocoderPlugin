@@ -18,6 +18,52 @@ enum WindowFunctionType
     Hanning
 };
 
+enum ProcessType
+{
+    PitchShift,
+    Robotization,
+    Whisperization
+};
+
+
+/* Textbook robotization
+for(int bin = 0; bin < fftTransformSize_; bin++)
+ {
+ float amplitude=sqrt(
+ (fftFrequencyDomain[bin][0] *
+ fftFrequencyDomain[bin][0]) +
+ (fftFrequencyDomain[bin][1] *
+ fftFrequencyDomain[bin][1]));
+ // Set the phase of each bin to 0. phase = 0
+ // means the signal is entirely positive-real,
+ // but the overall amplitude is the same
+ fftFrequencyDomain[bin][0] = amplitude;
+ fftFrequencyDomain[bin][1] = 0.0;
+
+ Textbook whisperization
+  float amplitude=sqrt(
+ (fftFrequencyDomain[bin][0] *
+ fftFrequencyDomain[bin][0]) +
+ (fftFrequencyDomain[bin][1] *
+ fftFrequencyDomain[bin][1]));
+ // This is how we could exactly reconstruct the signal:
+ // float phase = atan2(fftFrequencyDomain[bin][1],
+ // fftFrequencyDomain[bin][0]);
+ // But instead, this is how we scramble the phase:
+ float phase = 2.0 * M_PI * (float)rand() /
+ (float)RAND_MAX;
+ fftFrequencyDomain[bin][0] = amplitude * cos(phase);
+ fftFrequencyDomain[bin][1] = amplitude * sin(phase);
+ // FFTs of real signals are conjugate-symmetric. We need
+ // to maintain that symmetry to produce a real output,
+ // even as we randomize the phase.
+ if(bin > 0 && bin < fftTransformSize_ / 2) {
+ fftFrequencyDomain[fftTransformSize_ - bin][0] =
+ amplitude * cos(phase);
+ fftFrequencyDomain[fftTransformSize_ - bin][1] =
+ -amplitude * sin(phase);
+ }
+ }*/
 
 #define DEFAULT_BUFFER_SIZE_ONLINE 1024 * 1024 // 1000,000 samples * 4 byte/sample = 4 MB should be much more than required for any audio
 #define FFT_ORDER_ONLINE 9
@@ -94,7 +140,9 @@ private:
     std::string LookupSafeWriteLocation();
     std::string LookupSafeFileName();
     void GenerateWindowFunction(WindowFunctionType window_type);
-    void Process();
+    void Process(dsp::Complex<float> * fft_data, uint32_t fft_size, ProcessType type);
     void PhaseLock();
     void WriteWindow(dsp::Complex<float>* input, dsp::Complex<float>* output, uint32_t count);
+    void Whisperization(dsp::Complex<float> * fft_data, uint32_t fft_size);
+    void Robotization(dsp::Complex<float> * fft_data, uint32_t fft_size);
 };

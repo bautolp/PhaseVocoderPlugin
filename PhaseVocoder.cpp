@@ -117,7 +117,7 @@ void PhaseVocoder::ApplyProcessingOffline(  dsp::Complex<float>* input,
                                                 intermed_fw[i].imag() / (SCALING_FACTOR_OFFLINE));
     }
 
-    Process();
+    Process(intermed_fw, FFT_SIZE_OFFLINE, ProcessType::PitchShift);
 
     // Perform Phase locking (currently does nothing)
     PhaseLock();
@@ -304,7 +304,27 @@ void PhaseVocoder::CommitBufferOnline(std::string output_file)
     write_word(f, file_length - 8, 4);
 }
 
-void PhaseVocoder::Process()
+void PhaseVocoder::Process(dsp::Complex<float> * fft_data, uint32_t fft_size, ProcessType type)
+{
+    switch (type)
+    {
+        case ProcessType::PitchShift:
+            break;
+        case ProcessType::Robotization:
+            Robotization(fft_data, fft_size);
+            break;
+        case ProcessType::Whisperization:
+            Whisperization(fft_data, fft_size);
+            break;
+        default:
+            break;
+    }
+}
+void PhaseVocoder::Whisperization(dsp::Complex<float> * fft_data, uint32_t fft_size) 
+{
+
+}
+void PhaseVocoder::Robotization(dsp::Complex<float> * fft_data, uint32_t fft_size)
 {
 
 }
@@ -366,7 +386,7 @@ void PhaseVocoder::ApplyProcessingOnline(dsp::Complex<float>* input,
     uint32_t count,
     uint32_t window_start)
 {
-    float scaling_factor = (float)SCALING_FACTOR_ONLINE / 2;
+    float scaling_factor = (float)SCALING_FACTOR_ONLINE / 4;
     dsp::Complex<float> buff[FFT_SIZE_ONLINE];
 
     ApplyWindowFunctionOnline(input, buff, count, window_start);
@@ -384,7 +404,7 @@ void PhaseVocoder::ApplyProcessingOnline(dsp::Complex<float>* input,
                                                 intermed_fw[i].imag() / (scaling_factor));
     }
 
-    Process();
+    Process(intermed_fw, FFT_SIZE_ONLINE, ProcessType::PitchShift);
 
     // Perform Phase locking (currently does nothing)
     PhaseLock();
