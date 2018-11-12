@@ -398,10 +398,13 @@ void PhaseVocoder::ApplyProcessingOnline(dsp::Complex<float>* input,
 
     m_forward_fft_online.perform(buff, intermed_fw, false);
 
-    for (uint32_t i = 0; i < FFT_SIZE_ONLINE; i++)
+    if ((int)scaling_factor != 1)
     {
-        intermed_fw[i] = dsp::Complex<float>(   intermed_fw[i].real() / (scaling_factor),
-                                                intermed_fw[i].imag() / (scaling_factor));
+        for (uint32_t i = 0; i < FFT_SIZE_ONLINE; i++)
+        {
+            intermed_fw[i] = dsp::Complex<float>(   intermed_fw[i].real() / (scaling_factor),
+                                                    intermed_fw[i].imag() / (scaling_factor));
+        }
     }
 
     Process(intermed_fw, FFT_SIZE_ONLINE, ProcessType::PitchShift);
