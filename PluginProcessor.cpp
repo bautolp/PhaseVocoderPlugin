@@ -176,7 +176,7 @@ void PhaseVocoderPluginAudioProcessor::processBlock (AudioBuffer<float>& buffer,
     for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
     {
         float * output = buffer.getWritePointer(channel);
-        phase_vocoder->DSPOffline(output, output, buffer.getNumSamples(), channel);
+        //phase_vocoder->DSPOffline(output, output, buffer.getNumSamples(), channel);
         phase_vocoder->DSPOnline(output, output, buffer.getNumSamples(), channel);
     }
 }

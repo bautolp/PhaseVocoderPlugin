@@ -164,11 +164,11 @@ void PhaseVocoder::DSPOnline(float* input, float* output, uint32_t buff_size, ui
         m_complex_in_online[channel][i] = dsp::Complex<float>(input[i], 0.0f);
         m_complex_out_online[channel][i] = dsp::Complex<float>(0.0f, 0.0f);
     }
-    for (uint32_t i = buff_size; i < 8*2048; i++)
+    /*for (uint32_t i = buff_size; i < 8*2048; i++)
     {
         m_complex_in_online[channel][i] = dsp::Complex<float>(0.0f, 0.0f);
         m_complex_out_online[channel][i] = dsp::Complex<float>(0.0f, 0.0f);
-    }
+    }*/
     
     ProcessSegmentOnline(m_complex_in_online[channel], m_complex_out_online[channel], buff_size);
 
@@ -177,10 +177,10 @@ void PhaseVocoder::DSPOnline(float* input, float* output, uint32_t buff_size, ui
         output[i] = m_complex_out_online[channel][i].real();
     }
 
-    for (uint32_t i = 0; i < buff_size; i++)
+    /*for (uint32_t i = 0; i < buff_size; i++)
     {
         m_test_buffer[channel][m_buffer_size_online[channel]++] += m_complex_out_online[channel][i];
-    }
+    }*/
 }
 
 std::string PhaseVocoder::LookupSafeWriteLocation()
@@ -216,8 +216,8 @@ void PhaseVocoder::ProcessBufferOffline()
     ProcessSegmentOffline((m_complex_in_offline[1]), (m_complex_out_offline[1]), m_buffer_size[1]);
 
     // Write buffer to file
-    CommitBufferOffline(output_file);
-    CommitBufferOnline(output_file);
+    //CommitBufferOffline(output_file);
+    //CommitBufferOnline(output_file);
 }
 
 template <typename Word>
