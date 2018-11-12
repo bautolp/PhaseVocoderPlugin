@@ -18,20 +18,33 @@ enum WindowFunctionType
     Hanning
 };
 
-#define DEFAULT_BUFFER_SIZE 1024 * 1024 * 16 // 16,000,000 samples * 4 byte/sample = 64 MB should be much more than required for any audio
-#define FFT_ORDER 12
-#define FFT_SIZE (1 << FFT_ORDER)
-#define SEGMENT_SIZE 1024
-#define WINDOW_SIZE 128
-#define HOP_SIZE 32
-#define SCALING_FACTOR ((FFT_SIZE / WINDOW_SIZE) * (WINDOW_SIZE / (HOP_SIZE / 2)))
+
+#define DEFAULT_BUFFER_SIZE_ONLINE 1024 * 1024 // 1000,000 samples * 4 byte/sample = 4 MB should be much more than required for any audio
+#define FFT_ORDER_ONLINE 9
+#define FFT_SIZE_ONLINE (1 << FFT_ORDER_ONLINE)
+#define SEGMENT_SIZE_ONLINE 256
+#define WINDOW_SIZE_ONLINE 128
+#define HOP_SIZE_ONLINE 64
+#define SCALING_FACTOR_ONLINE ((FFT_SIZE_ONLINE / WINDOW_SIZE_ONLINE) * (WINDOW_SIZE_ONLINE / (HOP_SIZE_ONLINE*2)))
+
+#define DEFAULT_BUFFER_SIZE_OFFLINE 1024 * 1024 * 8 // 8,000,000 samples * 4 byte/sample = 32 MB should be much more than required for any audio
+#define FFT_ORDER_OFFLINE 9
+#define FFT_SIZE_OFFLINE (1 << FFT_ORDER_OFFLINE)
+#define SEGMENT_SIZE_OFFLINE 256
+#define WINDOW_SIZE_OFFLINE 64
+#define HOP_SIZE_OFFLINE 32
+#define SCALING_FACTOR_OFFLINE ((FFT_SIZE_OFFLINE / SEGMENT_SIZE_OFFLINE) / 2)
+
+#define INTERM_BUFFER_SIZE 8192
+
 
 class PhaseVocoder
 {
 public:
-    PhaseVocoder(uint32_t window_size, uint32_t hop_size, WindowFunctionType window_type);
+    PhaseVocoder(WindowFunctionType window_type);
     ~PhaseVocoder();
-    void DSPProcessing(float* input, float* output, uint32_t buff_size, uint32_t channel);
+    void DSPOffline(float* input, float* output, uint32_t buff_size, uint32_t channel);
+    void DSPOnline(float* input, float* output, uint32_t buff_size, uint32_t channel);
     void Setup(uint32_t window_size, uint32_t hop_size, WindowFunctionType window_type);
     void Finish();
 private:
@@ -39,32 +52,49 @@ private:
     // Allocate output buffer and tmp buffer
     uint32_t m_buffer_size[2] = { 0, 0 };
 
-    float windowed_buffer[8192];
-    float output_buff[8192];
+    uint32_t m_buffer_size_online[2] = { 0, 0 };
 
-    dsp::Complex<float> m_complex_intermed_fw[FFT_SIZE * 2 + WINDOW_SIZE];
-    dsp::Complex<float> m_complex_intermed_rv[FFT_SIZE * 2 + WINDOW_SIZE];
-    dsp::Complex<float> m_complex_in[2][DEFAULT_BUFFER_SIZE];
-    dsp::Complex<float> m_complex_out[2][DEFAULT_BUFFER_SIZE];
-    uint32_t m_window_size = WINDOW_SIZE;
-    uint32_t m_hop_size = HOP_SIZE;
-    dsp::FFT m_forward_fft;
-    dsp::FFT m_reverse_fft;
-    float m_window_function[2 * FFT_SIZE + WINDOW_SIZE];
-    float m_window_buffer[2 * FFT_SIZE + WINDOW_SIZE];
+    float windowed_buffer[INTERM_BUFFER_SIZE];
+    float output_buff[INTERM_BUFFER_SIZE];
 
-    void CommitBuffer(std::string output_file);
-    void ProcessBuffer();
-    void ProcessSegment(dsp::Complex<float>* input_buffer, dsp::Complex<float> * output_buffer, uint32_t segment_size);
+    dsp::Complex<float> m_complex_intermed_fw_offline[FFT_SIZE_OFFLINE * 2 + WINDOW_SIZE_OFFLINE];
+    dsp::Complex<float> m_complex_intermed_rv_offline[FFT_SIZE_OFFLINE * 2 + WINDOW_SIZE_OFFLINE];
+    dsp::Complex<float> m_complex_in_offline[2][DEFAULT_BUFFER_SIZE_OFFLINE];
+    dsp::Complex<float> m_complex_out_offline[2][DEFAULT_BUFFER_SIZE_OFFLINE];
+    dsp::Complex<float> m_test_buffer[2][DEFAULT_BUFFER_SIZE_OFFLINE];
+    uint32_t m_window_size_offline = WINDOW_SIZE_OFFLINE;
+    uint32_t m_hop_size_offline = HOP_SIZE_OFFLINE;
+    dsp::FFT m_forward_fft_offline;
+    dsp::FFT m_reverse_fft_offline;
+    float m_window_function_offline[2 * FFT_SIZE_OFFLINE + WINDOW_SIZE_OFFLINE];
+    float m_window_buffer_offline[2 * FFT_SIZE_OFFLINE + WINDOW_SIZE_OFFLINE];
+
+    void CommitBufferOffline(std::string output_file);
+    void ProcessBufferOffline();
+    void ProcessSegmentOffline(dsp::Complex<float>* input_buffer, dsp::Complex<float> * output_buffer, uint32_t segment_size);
+    void ApplyProcessingOffline(dsp::Complex<float>* input, dsp::Complex<float>* intermed_fw, dsp::Complex<float>* intermed_rv, dsp::Complex<float>* output, uint32_t count, uint32_t window_start);
+    void ApplyWindowFunctionOffline(dsp::Complex<float>* input, dsp::Complex<float>* output, uint32_t count, uint32_t window_start);
+
+    dsp::Complex<float> m_complex_intermed_fw_online[FFT_SIZE_OFFLINE * 2 + WINDOW_SIZE_ONLINE];
+    dsp::Complex<float> m_complex_intermed_rv_online[FFT_SIZE_OFFLINE * 2 + WINDOW_SIZE_ONLINE];
+    dsp::Complex<float> m_complex_in_online[2][DEFAULT_BUFFER_SIZE_ONLINE];
+    dsp::Complex<float> m_complex_out_online[2][DEFAULT_BUFFER_SIZE_ONLINE];
+    uint32_t m_window_size_online = WINDOW_SIZE_ONLINE;
+    uint32_t m_hop_size_online = HOP_SIZE_ONLINE;
+    dsp::FFT m_forward_fft_online;
+    dsp::FFT m_reverse_fft_online;
+    float m_window_function_online[2 * FFT_SIZE_ONLINE + WINDOW_SIZE_ONLINE];
+    float m_window_buffer_online[2 * FFT_SIZE_ONLINE + WINDOW_SIZE_ONLINE];
+
+    void CommitBufferOnline(std::string output_file);
+    void ProcessSegmentOnline(dsp::Complex<float>* input_buffer, dsp::Complex<float> * output_buffer, uint32_t segment_size);
+    void ApplyProcessingOnline(dsp::Complex<float>* input, dsp::Complex<float>* intermed_fw, dsp::Complex<float>* intermed_rv, dsp::Complex<float>* output, uint32_t count, uint32_t window_start);
+    void ApplyWindowFunctionOnline(dsp::Complex<float>* input, dsp::Complex<float>* output, uint32_t count, uint32_t window_start);
+
     std::string LookupSafeWriteLocation();
     std::string LookupSafeFileName();
     void GenerateWindowFunction(WindowFunctionType window_type);
-    void ApplyWindowFunction(dsp::Complex<float>* input, dsp::Complex<float>* output, uint32_t count);
-    void ApplyProcessing(dsp::Complex<float>* input, dsp::Complex<float>* intermed_fw, dsp::Complex<float>* intermed_rv, dsp::Complex<float>* output, uint32_t count);
     void Process();
     void PhaseLock();
-    void ReScaleWindow(float* buffer, uint32_t count, float scale);
     void WriteWindow(dsp::Complex<float>* input, dsp::Complex<float>* output, uint32_t count);
-
-
 };

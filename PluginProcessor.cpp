@@ -24,11 +24,9 @@ PhaseVocoderPluginAudioProcessor::PhaseVocoderPluginAudioProcessor()
     ), lowpass(dsp::IIR::Coefficients<float>::makeLowPass(44100, 800.0f, 0.1f)), phase_vocoder(NULL)
 #endif
 {
-    uint32_t window_size = 128;
-    uint32_t hop_size = 8;
     WindowFunctionType window_type = WindowFunctionType::Hanning;
 
-    phase_vocoder = new PhaseVocoder(window_size, hop_size, window_type);
+    phase_vocoder = new PhaseVocoder(window_type);
 }
 
 PhaseVocoderPluginAudioProcessor::~PhaseVocoderPluginAudioProcessor()
@@ -91,15 +89,19 @@ int PhaseVocoderPluginAudioProcessor::getCurrentProgram()
 
 void PhaseVocoderPluginAudioProcessor::setCurrentProgram (int index)
 {
+    (void)index;
 }
 
 const String PhaseVocoderPluginAudioProcessor::getProgramName (int index)
 {
+    (void)index;
     return {};
 }
 
 void PhaseVocoderPluginAudioProcessor::changeProgramName (int index, const String& newName)
 {
+    (void)index;
+    (void)newName;
 }
 
 //==============================================================================
@@ -154,6 +156,7 @@ void PhaseVocoderPluginAudioProcessor::update_parameters()
 
 void PhaseVocoderPluginAudioProcessor::dsp_process(dsp::ProcessContextReplacing<float> context)
 {
+    (void)context;
     // do processing here 
 }
 
@@ -167,39 +170,14 @@ void PhaseVocoderPluginAudioProcessor::update_filter()
 
 void PhaseVocoderPluginAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
+    (void)midiMessages;
     ScopedNoDenormals noDenormals;
-    //buffer.applyGain(0.1);
-
-    /*dsp::AudioBlock<float> block(buffer);
-    update_filter();
-    lowpass.process(dsp::ProcessContextReplacing<float>(block));
-    return;
-
-
-    static uint32_t window_size = 0;
-    static uint32_t hop_size = 0;
-    if (window_size != (buffer.getNumSamples() / 8))
-    {
-        window_size = buffer.getNumSamples() / 8;
-        hop_size = 1;
-        phase_vocoder->Setup(window_size, hop_size, WindowFunctionType::Flat);
-    }
-
-    for (int channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
-        buffer.clear(channel, 0, buffer.getNumSamples());
 
     for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
     {
         float * output = buffer.getWritePointer(channel);
-
-        // Clear output buffer because we are not setting, just adding to current val
-        phase_vocoder->DSPProcessing(output, output, buffer.getNumSamples());
-    }*/
-
-    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-    {
-        float * output = buffer.getWritePointer(channel);
-        phase_vocoder->DSPProcessing(output, output, buffer.getNumSamples(), channel);
+        phase_vocoder->DSPOffline(output, output, buffer.getNumSamples(), channel);
+        phase_vocoder->DSPOnline(output, output, buffer.getNumSamples(), channel);
     }
 }
 
@@ -217,6 +195,7 @@ AudioProcessorEditor* PhaseVocoderPluginAudioProcessor::createEditor()
 //==============================================================================
 void PhaseVocoderPluginAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
+    (void)destData;
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
@@ -224,6 +203,8 @@ void PhaseVocoderPluginAudioProcessor::getStateInformation (MemoryBlock& destDat
 
 void PhaseVocoderPluginAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+    (void)sizeInBytes;
+    (void)data;
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
 }
